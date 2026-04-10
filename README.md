@@ -1,42 +1,44 @@
 # FuelEU Maritime Compliance Platform
 
-A full-stack implementation of **FuelEU Maritime Regulation (EU) 2023/1805** compliance features with:
-- route management
+## Overview
+
+A full-stack implementation of the **FuelEU Maritime Regulation (EU) 2023/1805** compliance module. The project provides:
+- route registry and baseline selection
+- year-aware GHG intensity compliance checks
 - compliance balance calculation
-- banking (Art. 20)
-- pooling (Art. 21)
+- banking of surplus CB (Art. 20)
+- pooling of adjusted CB across same-year ships (Art. 21)
+- a React frontend and an Express + PostgreSQL backend
 
-## Repository Structure
+## Architecture summary
 
-- `/backend` — Express + TypeScript + PostgreSQL implementation
-- `/frontend` — React + TypeScript + Vite UI
+This project follows a hexagonal-style structure.
 
-## Architecture Overview
+### Backend
 
-Both backend and frontend follow a hexagonal style:
-- `core` contains pure business/domain logic
-- `ports` define interfaces
-- `adapters` implement framework-specific behavior
+- `backend/src/core/domain/` — pure domain logic and regulatory formulas
+- `backend/src/core/application/` — use-cases that orchestrate business rules
+- `backend/src/core/ports/` — repository interfaces (ports)
+- `backend/src/adapters/outbound/` — PostgreSQL repository implementations
+- `backend/src/adapters/inbound/` — Express HTTP handlers
+- `backend/src/infrastructure/` — DB connection, migrations, seed, server setup
+- `backend/src/shared/` — shared utilities or types if needed
 
-## Problem statement coverage
+### Frontend
 
-This implementation follows the FuelEU Maritime assignment requirements by including:
-- Route registry with route filters, year, fuel type, and baseline selection
-- Year-specific regulatory target intensity (`91.16` for 2024, `89.3368` for 2025+)
-- Compliance Balance calculation using `CB = (target − actual) × energyInScope`
-- Same-year route comparison against the selected baseline route
-- Banking surplus compliance balance (Art. 20) and applying banked surplus to current-year deficit
-- Pooling adjusted CB across vessels in the same year (Art. 21) with non-negative total CB validation
-- Backend API endpoints and frontend tabs for routes, comparison, banking, and pooling
-- Verified test coverage and build success for backend and frontend
+- `frontend/src/core/domain/` — shared domain types
+- `frontend/src/core/ports/` — API adapter interfaces
+- `frontend/src/adapters/infrastructure/` — HTTP adapters to backend APIs
+- `frontend/src/adapters/ui/` — React UI components and tabs
+- `frontend/src/shared/` — shared styles or utilities
 
-## Prerequisites
+## Setup & Run
+
+### Prerequisites
 
 - Node.js 18+
 - PostgreSQL 14+
 - npm 9+
-
-## Setup
 
 ### 1. Install dependencies
 
@@ -47,9 +49,9 @@ cd ../frontend
 npm install
 ```
 
-### 2. Configure backend
+### 2. Configure environment
 
-Create `backend/.env` with values similar to:
+Create `backend/.env`:
 
 ```env
 DB_HOST=localhost
@@ -60,17 +62,13 @@ DB_PASSWORD=postgres
 PORT=3001
 ```
 
-### 3. Configure frontend
-
-Create `frontend/.env` with:
+Create `frontend/.env`:
 
 ```env
 VITE_API_URL=http://localhost:3001
 ```
 
-This value is optional if the frontend is served from the same origin as the backend.
-
-### 4. Prepare the database
+### 3. Prepare the database
 
 ```bash
 psql -U postgres -c "CREATE DATABASE fueleu;"
@@ -79,52 +77,34 @@ npm run db:migrate
 npm run db:seed
 ```
 
-## Run locally
-
-### Backend
+### 4. Start the backend
 
 ```bash
 cd backend
 npm run dev
 ```
 
-Backend listens on `http://localhost:3001` by default.
+The backend runs at `http://localhost:3001`.
 
-### Frontend
+### 5. Start the frontend
 
 ```bash
 cd frontend
 npm run dev
 ```
 
-Frontend listens on `http://localhost:3000` by default.
+The frontend runs at `http://localhost:3000`.
 
-## Build
+## How to execute tests
 
-### Backend
-
-```bash
-cd backend
-npm run build
-```
-
-### Frontend
-
-```bash
-cd frontend
-npm run build
-```
-
-## Tests
-
-### Backend
+### Backend tests
 
 ```bash
 cd backend
 npm test
 ```
 
-### Frontend
+### Frontend tests
 
 ```bash
 cd frontend
@@ -174,18 +154,70 @@ npm test
 | GET | `/pools` | List all pools |
 | POST | `/pools` | Create a pooling agreement `{ year, shipIds }` |
 
-## Example requests
+## Sample requests / responses
+
+### Get compliance balance for a ship
 
 ```bash
 curl "http://localhost:3001/compliance/cb?shipId=R002&year=2024"
+```
 
+Sample response:
+
+```json
+{
+  "shipId": "R002",
+  "year": 2024,
+  "cb": 87308000,
+  "energyInScope": 196800000,
+  "targetIntensity": 89.3368,
+  "actualIntensity": 88.0
+}
+```
+
+### Bank surplus for a ship
+
+```bash
 curl -X POST http://localhost:3001/banking/bank \
   -H "Content-Type: application/json" \
-  -d '{"shipId":"R002","year":2024}'
+  -d '{"shipId":"R001","year":2024}'
+```
 
+Sample response:
+
+```json
+{
+  "banked": 8200000,
+  "entry": {
+    "id": "...",
+    "shipId": "R001",
+    "year": 2024,
+    "amountGco2eq": 8200000,
+    "createdAt": "2026-04-10T..."
+  }
+}
+```
+
+### Create a pooling agreement
+
+```bash
 curl -X POST http://localhost:3001/pools \
   -H "Content-Type: application/json" \
-  -d '{"year":2024,"shipIds":["R001","R002","R004"]}'
+  -d '{"year":2024,"shipIds":["R001","R002","R003"]}'
+```
+
+Sample response:
+
+```json
+{
+  "id": "...",
+  "year": 2024,
+  "members": [
+    { "shipId": "R002", "cbBefore": 1234000, "cbAfter": 0 },
+    { "shipId": "R003", "cbBefore": -4500000, "cbAfter": -3266000 }
+  ],
+  "createdAt": "2026-04-10T..."
+}
 ```
 
 ## Seed data
