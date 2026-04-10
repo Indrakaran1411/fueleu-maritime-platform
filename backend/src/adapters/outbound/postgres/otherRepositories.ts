@@ -48,7 +48,7 @@ interface BankRow {
 export class PgBankRepository implements BankRepository {
   async findByShipAndYear(shipId: string, year: number): Promise<BankEntry[]> {
     const rows = await query<BankRow>(
-      'SELECT * FROM bank_entries WHERE ship_id = $1 AND year = $2 ORDER BY created_at',
+      'SELECT * FROM bank_entries WHERE ship_id = $1 AND year <= $2 ORDER BY year, created_at',
       [shipId, year]
     );
     return rows.map(r => ({
@@ -62,7 +62,7 @@ export class PgBankRepository implements BankRepository {
 
   async getTotalBanked(shipId: string, year: number): Promise<number> {
     const rows = await query<{ total: string }>(
-      'SELECT COALESCE(SUM(amount_gco2eq), 0) AS total FROM bank_entries WHERE ship_id = $1 AND year = $2',
+      'SELECT COALESCE(SUM(amount_gco2eq), 0) AS total FROM bank_entries WHERE ship_id = $1 AND year <= $2',
       [shipId, year]
     );
     return parseFloat(rows[0].total);

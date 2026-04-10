@@ -119,10 +119,10 @@ export default function RoutesTab() {
                       {!route.isBaseline && (
                         <button
                           className="btn btn-outline"
-                          onClick={() => handleSetBaseline(route.routeId)}
-                          disabled={settingBaseline === route.routeId}
+                          onClick={() => handleSetBaseline(route.id)}
+                          disabled={settingBaseline === route.id}
                         >
-                          {settingBaseline === route.routeId ? '...' : 'Set Baseline'}
+                          {settingBaseline === route.id ? '...' : 'Set Baseline'}
                         </button>
                       )}
                     </td>

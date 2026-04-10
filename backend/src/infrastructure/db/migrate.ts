@@ -6,7 +6,7 @@ async function migrate(): Promise<void> {
   await db.query(`
     CREATE TABLE IF NOT EXISTS routes (
       id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-      route_id      VARCHAR(20) UNIQUE NOT NULL,
+      route_id      VARCHAR(20) NOT NULL,
       vessel_type   VARCHAR(50) NOT NULL,
       fuel_type     VARCHAR(50) NOT NULL,
       year          INTEGER NOT NULL,
@@ -17,6 +17,24 @@ async function migrate(): Promise<void> {
       is_baseline   BOOLEAN DEFAULT FALSE,
       created_at    TIMESTAMPTZ DEFAULT NOW()
     );
+  `);
+
+  await db.query(`
+    ALTER TABLE routes DROP CONSTRAINT IF EXISTS routes_route_id_key;
+  `);
+
+  await db.query(`
+    DROP INDEX IF EXISTS routes_route_id_year_key;
+  `);
+
+  await db.query(`
+    DO $$
+    BEGIN
+      ALTER TABLE routes
+      ADD CONSTRAINT routes_route_id_year_key UNIQUE (route_id, year);
+    EXCEPTION
+      WHEN duplicate_object THEN NULL;
+    END $$;
   `);
 
   await db.query(`

@@ -15,10 +15,9 @@ async function seed(): Promise<void> {
     await db.query(`
       INSERT INTO routes (route_id, vessel_type, fuel_type, year, ghg_intensity, fuel_consumption, distance, total_emissions, is_baseline)
       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
-      ON CONFLICT (route_id) DO UPDATE SET
+      ON CONFLICT ON CONSTRAINT routes_route_id_year_key DO UPDATE SET
         vessel_type = EXCLUDED.vessel_type,
         fuel_type = EXCLUDED.fuel_type,
-        year = EXCLUDED.year,
         ghg_intensity = EXCLUDED.ghg_intensity,
         fuel_consumption = EXCLUDED.fuel_consumption,
         distance = EXCLUDED.distance,

@@ -28,8 +28,12 @@ export default function BankingTab() {
 
   const validShipIds = Array.from(new Set(state.routes.map(r => r.routeId))).sort();
   const validYears = Array.from(new Set(state.routes.map(r => r.year))).sort();
-  const validYearsForShip = Array.from(new Set(state.routes.filter(r => r.routeId === state.shipId).map(r => r.year))).sort();
-  const validShipIdsForYear = Array.from(new Set(state.routes.filter(r => r.year === state.year).map(r => r.routeId))).sort();
+  const validShipIdsForYear = Array.from(
+    new Set(state.routes.filter(r => r.year === state.year).map(r => r.routeId))
+  ).sort();
+  const hasSelectedRoute = state.routes.some(
+    r => r.routeId === state.shipId && r.year === state.year
+  );
 
   useEffect(() => {
     const loadRoutes = async () => {
@@ -49,19 +53,15 @@ export default function BankingTab() {
 
   useEffect(() => {
     if (state.routes.length === 0) return;
-    const years = validYearsForShip;
-    if (years.length > 0 && !years.includes(state.year)) {
-      set({ year: years[0], cb: null, records: null });
+    if (!hasSelectedRoute) {
+      const fallback = state.routes.find(r => r.year === state.year)
+        ?? state.routes.find(r => r.routeId === state.shipId)
+        ?? state.routes[0];
+      if (fallback) {
+        set({ shipId: fallback.routeId, year: fallback.year, cb: null, records: null });
+      }
     }
-  }, [state.shipId, state.routes]);
-
-  useEffect(() => {
-    if (state.routes.length === 0) return;
-    const ships = validShipIdsForYear;
-    if (ships.length > 0 && !ships.includes(state.shipId)) {
-      set({ shipId: ships[0], cb: null, records: null });
-    }
-  }, [state.year, state.routes]);
+  }, [state.shipId, state.year, state.routes, hasSelectedRoute]);
 
   const fetchData = async (shipId = state.shipId, year = state.year) => {
     set({ loading: true, error: '', lastResult: '' });
@@ -126,14 +126,31 @@ export default function BankingTab() {
         </div>
         <div>
           <label style={{ display: 'block', fontFamily: 'var(--font-mono)', fontSize: '0.65rem', color: 'var(--text-muted)', marginBottom: 6, letterSpacing: '0.08em' }}>YEAR</label>
-          <select value={state.year} onChange={e => set({ year: Number(e.target.value), cb: null, records: null })}>
-            {validYearsForShip.map(y => <option key={y} value={y}>{y}</option>)}
-          </select>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {validYears.map(y => (
+              <button
+                key={y}
+                type="button"
+                className={state.year === y ? 'btn btn-primary' : 'btn btn-outline'}
+                onClick={() => set({ year: y, cb: null, records: null })}
+                disabled={state.loading}
+                style={{ minWidth: 64 }}
+              >
+                {y}
+              </button>
+            ))}
+          </div>
         </div>
         <button className="btn btn-primary" onClick={() => fetchData()} disabled={state.loading || state.routes.length === 0}>
           {state.loading ? '...' : 'Fetch CB'}
         </button>
       </div>
+
+      {!hasSelectedRoute && state.routes.length > 0 && (
+        <div style={{ marginTop: -8, marginBottom: 16, color: 'var(--text-muted)', fontSize: '0.78rem' }}>
+          The selected ship has no route record for {state.year}. The selector has been moved to a valid ship/year pair for that year.
+        </div>
+      )}
 
       {state.error && <div className="error-bar" style={{ marginBottom: 16 }}>{state.error}</div>}
       {state.lastResult && (

@@ -38,7 +38,7 @@ export class PgRouteRepository implements RouteRepository {
 
   async findById(id: string): Promise<Route | null> {
     const rows = await query<RouteRow>(
-      'SELECT * FROM routes WHERE id::text = $1 OR route_id = $1',
+      'SELECT * FROM routes WHERE id::text = $1',
       [id]
     );
     return rows.length > 0 ? toRoute(rows[0]) : null;
@@ -53,7 +53,7 @@ export class PgRouteRepository implements RouteRepository {
     // Clear existing baseline, set new one
     await db.query('UPDATE routes SET is_baseline = FALSE');
     await db.query(
-      'UPDATE routes SET is_baseline = TRUE WHERE id::text = $1 OR route_id = $1',
+      'UPDATE routes SET is_baseline = TRUE WHERE id::text = $1',
       [id]
     );
     const route = await this.findById(id);
