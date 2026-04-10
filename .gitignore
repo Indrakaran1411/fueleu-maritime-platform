@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.env
+*.js.map
+
+# Ignore generated frontend source artifacts
+/frontend/src/**/*.js
+/frontend/src/**/*.js.map
+
+# Ignore generated backend test artifacts
+/backend/__tests__/*.js
+/backend/__tests__/*.d.ts
