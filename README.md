@@ -18,6 +18,18 @@ Both backend and frontend follow a hexagonal style:
 - `ports` define interfaces
 - `adapters` implement framework-specific behavior
 
+## Problem statement coverage
+
+This implementation follows the FuelEU Maritime assignment requirements by including:
+- Route registry with route filters, year, fuel type, and baseline selection
+- Year-specific regulatory target intensity (`91.16` for 2024, `89.3368` for 2025+)
+- Compliance Balance calculation using `CB = (target − actual) × energyInScope`
+- Same-year route comparison against the selected baseline route
+- Banking surplus compliance balance (Art. 20) and applying banked surplus to current-year deficit
+- Pooling adjusted CB across vessels in the same year (Art. 21) with non-negative total CB validation
+- Backend API endpoints and frontend tabs for routes, comparison, banking, and pooling
+- Verified test coverage and build success for backend and frontend
+
 ## Prerequisites
 
 - Node.js 18+
@@ -118,6 +130,15 @@ npm test
 cd frontend
 npm test
 ```
+
+## Outcomes
+
+- Backend tests: `24/24` passed
+- Frontend tests: `8/8` passed
+- Backend build: success
+- Frontend build: success
+- Local UI: `http://localhost:3000`
+- Backend health: `http://localhost:3001/health`
 
 ## API Reference
 

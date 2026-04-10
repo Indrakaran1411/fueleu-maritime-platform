@@ -8,6 +8,8 @@ const VESSEL_TYPES: VesselType[] = ['All', 'Container', 'BulkCarrier', 'Tanker',
 const FUEL_TYPES: FuelType[] = ['All', 'HFO', 'LNG', 'MGO'];
 const YEARS = ['All', 2024, 2025] as const;
 
+const getTargetIntensity = (year: number) => year >= 2025 ? 89.3368 : 91.16;
+
 export default function RoutesTab() {
   const [routes, setRoutes] = useState<Route[]>([]);
   const [loading, setLoading] = useState(true);
@@ -102,7 +104,7 @@ export default function RoutesTab() {
                       </span>
                     </td>
                     <td>{route.year}</td>
-                    <td style={{ color: route.ghgIntensity > 89.34 ? 'var(--danger)' : 'var(--success)' }}>
+                    <td style={{ color: route.ghgIntensity > getTargetIntensity(route.year) ? 'var(--danger)' : 'var(--success)' }}>
                       {route.ghgIntensity.toFixed(1)}
                     </td>
                     <td>{route.fuelConsumption.toLocaleString()}</td>
